@@ -1,12 +1,11 @@
 {
   "name": "telegram-bot",
   "version": "1.0.0",
-  "description": "Telegram bot with Express server",
+  "description": "Telegram bot project",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
