@@ -1,41 +1,83 @@
-const TelegramBot = require("node-telegram-bot-api");
-const axios = require("axios");
+import TelegramBot from "node-telegram-bot-api";
+import fetch from "node-fetch";
+import express from "express";
 
-// 🔑 PUT YOUR TOKENS HERE
-const TELEGRAM_TOKEN = "8716497958:AAFk89W8OcSvDi9pWgeRY__HMY9eKuNk21I";
-const OPENROUTER_API_KEY = "sk-or-v1-49555211357413c987ac88b3e9d3b90903ee610a7e0cde5032b683cfc8935d04x";
+// ====== ENV VARIABLES ======
+const TELEGRAM_BOT_TOKEN = process.env.8716497958:AAFk89W8OcSvDi9pWgeRY__HMY9eKuNk21I;
+const OPENROUTER_API_KEY = process.env.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;
 
-const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+// ====== BASIC CHECK ======
+if (!TELEGRAM_BOT_TOKEN || !OPENROUTER_API_KEY) {
+  console.error("❌ Missing environment variables");
+  process.exit(1);
+}
 
+// ====== START EXPRESS (for Render) ======
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+  res.send("Bot is running ✅");
+});
+
+app.listen(PORT, () => {
+  console.log(`🌐 Server running on port ${PORT}`);
+});
+
+// ====== TELEGRAM BOT ======
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
+  polling: true,
+});
+
+console.log("🤖 Telegram bot started...");
+
+// ====== MESSAGE HANDLER ======
 bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
-  const userText = msg.text;
+  const userMessage = msg.text;
+
+  if (!userMessage) return;
 
   try {
-    const response = await axios.post(
+    // Show typing
+    bot.sendChatAction(chatId, "typing");
+
+    const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "mistralai/mistral-7b-instruct",
-        messages: [{ role: "user", content: userText }],
-      },
-      {
+        method: "POST",
         headers: {
-  "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-  "Content-Type": "application/json",
-  "HTTP-Referer": "https://your-site.com",
-  "X-Title": "Telegram Bot",
-}
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://your-site.com",
+          "X-Title": "Telegram Bot",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: "You are a helpful AI assistant." },
+            { role: "user", content: userMessage },
+          ],
+        }),
       }
     );
 
-    const reply = response.data.choices[0].message.content;
+    const data = await response.json();
 
-    bot.sendMessage(chatId, reply);
+    // Debug log
+    console.log("AI response:", data);
 
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      "⚠️ AI did not return a valid response.";
+
+    await bot.sendMessage(chatId, reply);
   } catch (error) {
-    console.log(error.response?.data || error.message);
-    bot.sendMessage(chatId, "Error connecting to AI");
+    console.error("❌ Error:", error);
+
+    await bot.sendMessage(
+      chatId,
+      "⚠️ Error connecting to AI. Check API key or server."
+    );
   }
 });
-
-console.log("Bot is running...");
