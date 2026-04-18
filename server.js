@@ -1,38 +1,19 @@
-const express = require("express");
-const axios = require("axios");
+const TelegramBot = require('node-telegram-bot-api');
 
-const app = express();
-app.use(express.json());
+const token = process.env.BOT_TOKEN;
 
-// 🔴 REPLACE THIS WITH YOUR REAL BOT TOKEN
-const TOKEN = "8716497958:AAEtNR901aQ5Eh_toZD6FSBboCmhl8JJjIo";
+const bot = new TelegramBot(token, { polling: true });
 
-const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
 
-app.post("/webhook", async (req, res) => {
-  const message = req.body.message;
+  let reply = "I don't understand 🤖";
 
-  if (message) {
-    const chatId = message.chat.id;
-    const text = message.text;
-
-    let reply = "I don't understand 🤖";
-
-    if (text === "/start") {
-      reply = "✅ Bot is working!";
-    } else {
-      reply = "You said: " + text;
-    }
-
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-      chat_id: chatId,
-      text: reply,
-    });
+  if (msg.text === "/start") {
+    reply = "✅ Bot is working!";
   }
 
-  res.sendStatus(200);
+  bot.sendMessage(chatId, reply);
 });
 
-app.listen(3000, () => {
-  console.log("🚀 Server running on port 3000");
-});
+console.log("Bot is running...");
