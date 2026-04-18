@@ -1,40 +1,42 @@
-const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
+const axios = require('axios');
 
-const app = express();
+const bot = new TelegramBot(process.env.8716497958:AAFk89W8OcSvDi9pWgeRY__HMY9eKuNk21I, {
+  polling: true
+});
 
-// 🔐 Get token from Render environment
-const token = process.env.BOT_TOKEN;
+const OPENROUTER_API_KEY = process.env.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;
 
-// ❌ Stop app if token is missing
-if (!token) {
-  console.error("❌ BOT_TOKEN is missing! Add it in Render environment variables.");
-  process.exit(1);
-}
-
-// 🤖 Create bot (polling mode)
-const bot = new TelegramBot(token, { polling: true });
-
-// 💬 Handle messages
-bot.on('message', (msg) => {
+bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
+  const text = msg.text;
 
-  let reply = "I don't understand 🤖";
+  if (!text) return;
 
-  if (msg.text === "/start") {
-    reply = "✅ Bot is working!";
+  try {
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: "openai/gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: text }
+        ]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    const reply = response.data.choices[0].message.content;
+
+    bot.sendMessage(chatId, reply);
+
+  } catch (err) {
+    console.log(err.response?.data || err.message);
+    bot.sendMessage(chatId, "AI error 😢");
   }
-
-  bot.sendMessage(chatId, reply);
-});
-
-// 🌐 Web server (REQUIRED for Render)
-app.get('/', (req, res) => {
-  res.send('Bot is running 🚀');
-});
-
-// 🔊 Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
 });
