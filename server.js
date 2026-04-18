@@ -15,14 +15,16 @@ bot.on("message", async (msg) => {
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "openai/gpt-3.5-turbo",
+        model: "mistralai/mistral-7b-instruct",
         messages: [{ role: "user", content: userText }],
       },
       {
         headers: {
-          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+  "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+  "Content-Type": "application/json",
+  "HTTP-Referer": "https://your-site.com",
+  "X-Title": "Telegram Bot",
+}
       }
     );
 
